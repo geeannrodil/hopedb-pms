@@ -1,176 +1,138 @@
 import React, { useState } from 'react';
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  AlertCircle,
-  CheckCircle2,
-} from 'lucide-react';
+import { CheckCircle2, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-function LoginPage({ onSwitch }) {
-  const [form, setForm] = useState({
-    email: '',
-    password: '',
-  });
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState({});
+function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-    // Clear error when user starts typing
-    if (errors[e.target.name]) {
-      setErrors({
-        ...errors,
-        [e.target.name]: '',
-      });
-    }
-  };
+  const navigate = useNavigate();
 
-  const validate = () => {
-    const newErrors = {};
-    if (!form.email) {
-      newErrors.email = 'Email is required';
-    } else if (!form.email.includes('@')) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    if (form.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    return newErrors;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const validationErrors = validate();
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+  const handleAuthSimulation = (e) => {
+    if (e) e.preventDefault();
 
     setLoading(true);
-    // Simulate API call
+
     setTimeout(() => {
       setLoading(false);
       setSuccess(true);
+
+      setTimeout(() => navigate('/products'), 1000);
     }, 1500);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-200 flex items-center justify-center px-4 py-10 font-sans">
-      <div className="w-full max-w-md bg-white/70 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl p-8 sm:p-10">
-        
+    <div className="min-h-screen bg-gradient-to-br from-[#F8FAFC] via-[#EEF2FF] to-[#F5F3FF] flex items-center justify-center px-4 py-10 font-sans">
+
+      {/* Card */}
+      <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-white shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-3xl p-8 sm:p-10">
+
         {/* Header */}
-        <div className="text-center mb-8 px-2">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+        <div className="text-center mb-10">
+
+          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-violet-200">
+            <span className="text-white text-2xl font-bold">P</span>
+          </div>
+
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
             Product Management System
           </h1>
-          <div className="h-1 w-12 bg-indigo-500 mx-auto mt-3 rounded-full"></div>
-          <p className="text-sm text-slate-500 mt-4 font-medium uppercase tracking-wider">
-            Secure Login Portal
+
+          <p className="text-sm text-gray-500 mt-3">
+            Sign in to manage your inventory, track products, and streamline operations.
           </p>
         </div>
 
         {/* Success Alert */}
         {success && (
           <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-3 text-sm animate-in fade-in zoom-in">
-            <CheckCircle2 size={20} />
-            <span>Authentication successful! Redirecting...</span>
+            <CheckCircle2 size={18} className="text-emerald-600" />
+            <span>Authentication successful! Redirecting to dashboard...</span>
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 mb-2 ml-1 uppercase tracking-widest">
-              Institutional Email
-            </label>
-            <div className="relative">
-              <Mail className={`absolute left-4 top-3.5 w-5 h-5 ${errors.email ? 'text-red-400' : 'text-slate-400'}`} />
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="user@neu.edu.ph"
-                className={`w-full pl-12 pr-4 py-3.5 bg-white border ${errors.email ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200'} rounded-2xl outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all shadow-sm text-sm`}
-              />
-            </div>
-            {errors.email && (
-              <p className="mt-2 ml-1 text-red-500 text-[10px] font-bold flex items-center gap-1">
-                <AlertCircle size={12} /> {errors.email}
-              </p>
-            )}
+        <form onSubmit={handleAuthSimulation} className="flex flex-col gap-4">
+
+          {/* Email */}
+          <input
+            type="email"
+            placeholder="Email address"
+            required
+            disabled={loading || success}
+            className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-all"
+          />
+
+          {/* Password */}
+          <input
+            type="password"
+            placeholder="Password"
+            required
+            disabled={loading || success}
+            className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-all"
+          />
+
+          {/* Forgot Password */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              className="text-sm text-violet-500 hover:text-violet-700 transition-colors"
+            >
+              Forgot password?
+            </button>
           </div>
 
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 mb-2 ml-1 uppercase tracking-widest">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className={`absolute left-4 top-3.5 w-5 h-5 ${errors.password ? 'text-red-400' : 'text-slate-400'}`} />
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className={`w-full pl-12 pr-12 py-3.5 bg-white border ${errors.password ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200'} rounded-2xl outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all shadow-sm text-sm`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-600"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="mt-2 ml-1 text-red-500 text-[10px] font-bold flex items-center gap-1">
-                <AlertCircle size={12} /> {errors.password}
-              </p>
-            )}
-          </div>
-
+          {/* Login Button */}
           <button
             type="submit"
-            disabled={loading}
-            className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-all active:scale-[0.98] ${
-              loading ? 'bg-slate-400' : 'bg-slate-900 hover:bg-slate-800 hover:shadow-indigo-200'
-            }`}
+            disabled={loading || success}
+            className="mt-2 w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-violet-500 to-indigo-500 hover:opacity-90 text-white rounded-2xl font-semibold transition-all shadow-lg shadow-violet-200 active:scale-[0.98] disabled:opacity-70"
           >
-            {loading ? 'AUTHENTICATING...' : 'SIGN IN'}
-          </button>
+            {loading && (
+              <Loader2 size={18} className="animate-spin" />
+            )}
 
-          <div className="relative flex items-center py-2">
-            <div className="flex-grow border-t border-slate-200"></div>
-            <span className="mx-4 text-slate-400 text-[10px] font-bold uppercase">or</span>
-            <div className="flex-grow border-t border-slate-200"></div>
-          </div>
-
-          <button
-            type="button"
-            className="w-full flex items-center justify-center gap-3 py-3.5 border border-slate-200 rounded-2xl font-semibold text-slate-700 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
-          >
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
-            Sign in with Google
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
-        <p className="text-center mt-10 text-xs text-slate-500 font-medium">
-          New to the system?{' '}
+        {/* Divider */}
+        <div className="flex items-center gap-4 my-7">
+          <div className="flex-1 h-px bg-gray-200"></div>
+
+          <span className="text-xs text-gray-400 uppercase tracking-[0.2em]">
+            OR
+          </span>
+
+          <div className="flex-1 h-px bg-gray-200"></div>
+        </div>
+
+        {/* Google Button */}
+        <button
+          onClick={() => handleAuthSimulation()}
+          disabled={loading || success}
+          className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium transition-all active:scale-[0.98]"
+        >
+          {!loading && (
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google"
+              className="w-5 h-5"
+            />
+          )}
+
+          Continue with Google
+        </button>
+
+        {/* Footer */}
+        <p className="text-center mt-8 text-sm text-gray-500">
+          Don&apos;t have an account?{' '}
           <button
-            onClick={onSwitch}
-            className="text-indigo-600 font-bold hover:underline"
+            onClick={() => navigate('/register')}
+            disabled={loading || success}
+            className="text-violet-600 hover:text-violet-800 font-semibold transition-colors"
           >
-            Register
+            Create account
           </button>
         </p>
       </div>
