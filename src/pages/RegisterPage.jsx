@@ -2,135 +2,201 @@ import React, { useState } from 'react';
 import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// ─── Color tokens ─────────────────────────────────────────────────────────────
+const colors = {
+  primary:       '#1E3A5F',
+  primaryHover:  '#27496D',
+  secondary:     '#4F6D8A',
+  accent:        '#5BC0BE',
+  background:    '#F8FAFC',
+  surface:       '#FFFFFF',
+  textPrimary:   '#1F2937',
+  textSecondary: '#6B7280',
+  border:        '#E5E7EB',
+  success:       '#10B981',
+};
+
 function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-
+  const [focused, setFocused] = useState(null);
   const navigate = useNavigate();
 
   const handleAuthSimulation = (e) => {
     if (e) e.preventDefault();
-
     setLoading(true);
-
     setTimeout(() => {
       setLoading(false);
       setSuccess(true);
-
       setTimeout(() => navigate('/products'), 1000);
     }, 1500);
   };
 
+  const inputStyle = (name) => ({
+    width: '100%',
+    padding: '12px 16px',
+    borderRadius: '10px',
+    backgroundColor: colors.background,
+    border: `1.5px solid ${focused === name ? colors.accent : colors.border}`,
+    color: colors.textPrimary,
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
+    boxShadow: focused === name ? `0 0 0 3px rgba(91,192,190,0.15)` : 'none',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+  });
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F8FAFC] via-[#EEF2FF] to-[#F5F3FF] flex items-center justify-center px-4 py-10 font-sans">
-
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-10"
+      style={{ backgroundColor: colors.background }}
+    >
       {/* Card */}
-      <div className="w-full max-w-lg bg-white/90 backdrop-blur-xl border border-white shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-3xl p-8 sm:p-10">
-
+      <div
+        className="w-full max-w-lg"
+        style={{
+          backgroundColor: colors.surface,
+          border: `1px solid ${colors.border}`,
+          borderRadius: '20px',
+          padding: '40px',
+          boxShadow: '0 8px 40px rgba(30,58,95,0.10)',
+        }}
+      >
         {/* Header */}
-        <div className="text-center mb-10">
-
-          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-violet-200">
-            <span className="text-white text-2xl font-bold">P</span>
+        <div className="text-center mb-9">
+          <div
+            className="w-14 h-14 mx-auto mb-5 rounded-2xl flex items-center justify-center"
+            style={{
+              backgroundColor: colors.primary,
+              boxShadow: '0 4px 16px rgba(30,58,95,0.25)',
+            }}
+          >
+            <span className="text-white text-xl font-extrabold tracking-tight">P</span>
           </div>
 
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+          <h1
+            className="text-2xl font-extrabold tracking-tight"
+            style={{ color: colors.textPrimary }}
+          >
             Create an Account
           </h1>
-
-          <p className="text-sm text-gray-500 mt-3">
+          <p className="text-sm mt-2.5" style={{ color: colors.textSecondary }}>
             Join HopePMS to organize, track, and scale your product management workflow.
           </p>
         </div>
 
         {/* Success Alert */}
         {success && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-3 text-sm animate-in fade-in zoom-in">
-            <CheckCircle2 size={18} className="text-emerald-600" />
-            <span>Account created successfully! Preparing your workspace...</span>
+          <div
+            className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl"
+            style={{
+              backgroundColor: '#ECFDF5',
+              border: `1px solid #A7F3D0`,
+              color: colors.success,
+            }}
+          >
+            <CheckCircle2 size={17} />
+            <span>Account created successfully! Preparing your workspace…</span>
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleAuthSimulation} className="flex flex-col gap-4">
+        <form onSubmit={handleAuthSimulation} className="flex flex-col gap-3.5">
 
-          {/* Name Fields */}
-          <div className="flex flex-col sm:flex-row gap-4">
-
+          {/* Name row */}
+          <div className="flex flex-col sm:flex-row gap-3.5">
             <input
               type="text"
               placeholder="First Name"
               required
               disabled={loading || success}
-              className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-all"
+              style={inputStyle('first')}
+              onFocus={() => setFocused('first')}
+              onBlur={() => setFocused(null)}
             />
-
             <input
               type="text"
               placeholder="Last Name"
               required
               disabled={loading || success}
-              className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-all"
+              style={inputStyle('last')}
+              onFocus={() => setFocused('last')}
+              onBlur={() => setFocused(null)}
             />
           </div>
 
-          {/* Username */}
           <input
             type="text"
             placeholder="Workspace Username"
             required
             disabled={loading || success}
-            className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-all"
+            style={inputStyle('username')}
+            onFocus={() => setFocused('username')}
+            onBlur={() => setFocused(null)}
           />
 
-          {/* Email */}
           <input
             type="email"
             placeholder="Work Email address"
             required
             disabled={loading || success}
-            className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-all"
+            style={inputStyle('email')}
+            onFocus={() => setFocused('email')}
+            onBlur={() => setFocused(null)}
           />
 
-          {/* Password */}
           <input
             type="password"
             placeholder="Password"
             required
             disabled={loading || success}
-            className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-all"
+            style={inputStyle('password')}
+            onFocus={() => setFocused('password')}
+            onBlur={() => setFocused(null)}
           />
 
           {/* Register Button */}
           <button
             type="submit"
             disabled={loading || success}
-            className="mt-2 w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-violet-500 to-indigo-500 hover:opacity-90 text-white rounded-2xl font-semibold transition-all shadow-lg shadow-violet-200 active:scale-[0.98] disabled:opacity-70"
+            className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-60"
+            style={{
+              backgroundColor: colors.primary,
+              boxShadow: '0 4px 14px rgba(30,58,95,0.30)',
+            }}
+            onMouseEnter={e => { if (!loading && !success) e.currentTarget.style.backgroundColor = colors.primaryHover; }}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = colors.primary}
           >
-            {loading && (
-              <Loader2 size={18} className="animate-spin" />
-            )}
-
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading && <Loader2 size={17} className="animate-spin" />}
+            {loading ? 'Creating Account…' : 'Create Account'}
           </button>
         </form>
 
         {/* Divider */}
-        <div className="flex items-center gap-4 my-7">
-          <div className="flex-1 h-px bg-gray-200"></div>
-
-          <span className="text-xs text-gray-400 uppercase tracking-[0.2em]">
-            OR
+        <div className="flex items-center gap-4 my-6">
+          <div className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
+          <span
+            className="text-[11px] font-semibold uppercase tracking-widest"
+            style={{ color: colors.textSecondary }}
+          >
+            or
           </span>
-
-          <div className="flex-1 h-px bg-gray-200"></div>
+          <div className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
         </div>
 
         {/* Google Button */}
         <button
-          onClick={() => handleAuthSimulation()}
+          onClick={() => navigate('/auth/callback')}
           disabled={loading || success}
-          className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium transition-all active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60"
+          style={{
+            backgroundColor: colors.surface,
+            border: `1.5px solid ${colors.border}`,
+            color: colors.textPrimary,
+          }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = colors.background}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = colors.surface}
         >
           {!loading && (
             <img
@@ -139,17 +205,19 @@ function RegisterPage() {
               className="w-5 h-5"
             />
           )}
-
           Continue with Google
         </button>
 
-        {/* Footer */}
+        {/* Back to Login */}
         <button
           onClick={() => navigate('/login')}
           disabled={loading || success}
-          className="mt-8 w-full flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-50"
+          className="mt-7 w-full flex items-center justify-center gap-2 text-sm font-medium transition-colors disabled:opacity-50"
+          style={{ color: colors.textSecondary }}
+          onMouseEnter={e => e.currentTarget.style.color = colors.primary}
+          onMouseLeave={e => e.currentTarget.style.color = colors.textSecondary}
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={15} />
           Back to Login
         </button>
       </div>
