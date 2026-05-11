@@ -1,246 +1,223 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
-import {
-  UserCircle,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ArrowLeft,
-  AlertCircle,
-  CheckCircle2,
-} from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-function RegisterPage({ onSwitch }) {
-  const [showPassword, setShowPassword] = useState(false);
+// ─── Color tokens ─────────────────────────────────────────────────────────────
+const colors = {
+  primary:       '#1E3A5F',
+  primaryHover:  '#27496D',
+  secondary:     '#4F6D8A',
+  accent:        '#5BC0BE',
+  background:    '#F8FAFC',
+  surface:       '#FFFFFF',
+  textPrimary:   '#1F2937',
+  textSecondary: '#6B7280',
+  border:        '#E5E7EB',
+  success:       '#10B981',
+};
+
+function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
-    username: '',
-    email: '',
-    password: '',
+  const [focused, setFocused] = useState(null);
+  const navigate = useNavigate();
+
+  const handleAuthSimulation = (e) => {
+    if (e) e.preventDefault();
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setSuccess(true);
+      setTimeout(() => navigate('/products'), 1000);
+    }, 1500);
+  };
+
+  const inputStyle = (name) => ({
+    width: '100%',
+    padding: '12px 16px',
+    borderRadius: '10px',
+    backgroundColor: colors.background,
+    border: `1.5px solid ${focused === name ? colors.accent : colors.border}`,
+    color: colors.textPrimary,
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
+    boxShadow: focused === name ? `0 0 0 3px rgba(91,192,190,0.15)` : 'none',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
   });
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: '' });
-    }
-  };
-
-  const validate = () => {
-    const newErrors = {};
-    if (!form.firstName) newErrors.firstName = 'First name is required';
-    if (!form.lastName) newErrors.lastName = 'Last name is required';
-    if (!form.username) newErrors.username = 'Username is required';
-    if (!form.email) {
-      newErrors.email = 'Email is required';
-    } else if (!form.email.includes('@')) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    if (form.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    return newErrors;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: {
-          firstName: form.firstName,
-          lastName: form.lastName,
-          username: form.username,
-        },
-      },
-    });
-    if (error) {
-      setErrors({ email: error.message });
-      setLoading(false);
-    } else {
-      setSuccess(true);
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleRegister = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-  };
-
-  const inputStyle = "w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all shadow-sm text-sm";
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-200 flex items-center justify-center px-4 py-10 font-sans">
-      <div className="w-full max-w-lg bg-white/70 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl p-8 sm:p-10">
-
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-10"
+      style={{ backgroundColor: colors.background }}
+    >
+      {/* Card */}
+      <div
+        className="w-full max-w-lg"
+        style={{
+          backgroundColor: colors.surface,
+          border: `1px solid ${colors.border}`,
+          borderRadius: '20px',
+          padding: '40px',
+          boxShadow: '0 8px 40px rgba(30,58,95,0.10)',
+        }}
+      >
         {/* Header */}
-        <div className="text-center mb-8 px-2">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
-            Create Account
+        <div className="text-center mb-9">
+          <div
+            className="w-14 h-14 mx-auto mb-5 rounded-2xl flex items-center justify-center"
+            style={{
+              backgroundColor: colors.primary,
+              boxShadow: '0 4px 16px rgba(30,58,95,0.25)',
+            }}
+          >
+            <span className="text-white text-xl font-extrabold tracking-tight">P</span>
+          </div>
+
+          <h1
+            className="text-2xl font-extrabold tracking-tight"
+            style={{ color: colors.textPrimary }}
+          >
+            Create an Account
           </h1>
-          <div className="h-1 w-12 bg-indigo-500 mx-auto mt-3 rounded-full"></div>
-          <p className="text-sm text-slate-500 mt-4 font-medium uppercase tracking-wider">
-            Product Management System
+          <p className="text-sm mt-2.5" style={{ color: colors.textSecondary }}>
+            Join HopePMS to organize, track, and scale your product management workflow.
           </p>
         </div>
 
         {/* Success Alert */}
         {success && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-3 text-sm">
-            <CheckCircle2 size={20} />
-            <span>Registration successful! Please wait for admin activation.</span>
+          <div
+            className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl"
+            style={{
+              backgroundColor: '#ECFDF5',
+              border: `1px solid #A7F3D0`,
+              color: colors.success,
+            }}
+          >
+            <CheckCircle2 size={17} />
+            <span>Account created successfully! Preparing your workspace…</span>
           </div>
         )}
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        {/* Form */}
+        <form onSubmit={handleAuthSimulation} className="flex flex-col gap-3.5">
 
-          {/* Name Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <input
-                type="text"
-                name="firstName"
-                placeholder="First Name"
-                value={form.firstName}
-                onChange={handleChange}
-                className={`w-full px-4 py-3.5 bg-white border ${errors.firstName ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200'} rounded-2xl outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all shadow-sm text-sm`}
-              />
-              {errors.firstName && (
-                <p className="mt-1 text-red-500 text-[10px] font-bold flex items-center gap-1">
-                  <AlertCircle size={12} /> {errors.firstName}
-                </p>
-              )}
-            </div>
-            <div>
-              <input
-                type="text"
-                name="lastName"
-                placeholder="Last Name"
-                value={form.lastName}
-                onChange={handleChange}
-                className={`w-full px-4 py-3.5 bg-white border ${errors.lastName ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200'} rounded-2xl outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all shadow-sm text-sm`}
-              />
-              {errors.lastName && (
-                <p className="mt-1 text-red-500 text-[10px] font-bold flex items-center gap-1">
-                  <AlertCircle size={12} /> {errors.lastName}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Username */}
-          <div className="relative">
-            <UserCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          {/* Name row */}
+          <div className="flex flex-col sm:flex-row gap-3.5">
             <input
               type="text"
-              name="username"
-              placeholder="Username"
-              value={form.username}
-              onChange={handleChange}
-              className={`${inputStyle} ${errors.username ? 'border-red-300 ring-4 ring-red-50' : ''}`}
+              placeholder="First Name"
+              required
+              disabled={loading || success}
+              style={inputStyle('first')}
+              onFocus={() => setFocused('first')}
+              onBlur={() => setFocused(null)}
             />
-            {errors.username && (
-              <p className="mt-1 text-red-500 text-[10px] font-bold flex items-center gap-1">
-                <AlertCircle size={12} /> {errors.username}
-              </p>
-            )}
-          </div>
-
-          {/* Email */}
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={handleChange}
-              className={`${inputStyle} ${errors.email ? 'border-red-300 ring-4 ring-red-50' : ''}`}
+              type="text"
+              placeholder="Last Name"
+              required
+              disabled={loading || success}
+              style={inputStyle('last')}
+              onFocus={() => setFocused('last')}
+              onBlur={() => setFocused(null)}
             />
-            {errors.email && (
-              <p className="mt-1 text-red-500 text-[10px] font-bold flex items-center gap-1">
-                <AlertCircle size={12} /> {errors.email}
-              </p>
-            )}
           </div>
 
-          {/* Password */}
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              name="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={handleChange}
-              className={`${inputStyle} pr-12 ${errors.password ? 'border-red-300 ring-4 ring-red-50' : ''}`}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-            {errors.password && (
-              <p className="mt-1 text-red-500 text-[10px] font-bold flex items-center gap-1">
-                <AlertCircle size={12} /> {errors.password}
-              </p>
-            )}
-          </div>
+          <input
+            type="text"
+            placeholder="Workspace Username"
+            required
+            disabled={loading || success}
+            style={inputStyle('username')}
+            onFocus={() => setFocused('username')}
+            onBlur={() => setFocused(null)}
+          />
 
-          {/* Submit Button */}
+          <input
+            type="email"
+            placeholder="Work Email address"
+            required
+            disabled={loading || success}
+            style={inputStyle('email')}
+            onFocus={() => setFocused('email')}
+            onBlur={() => setFocused(null)}
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            required
+            disabled={loading || success}
+            style={inputStyle('password')}
+            onFocus={() => setFocused('password')}
+            onBlur={() => setFocused(null)}
+          />
+
+          {/* Register Button */}
           <button
             type="submit"
-            disabled={loading}
-            className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-all active:scale-[0.98] ${
-              loading ? 'bg-slate-400' : 'bg-slate-900 hover:bg-slate-800'
-            }`}
+            disabled={loading || success}
+            className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-60"
+            style={{
+              backgroundColor: colors.primary,
+              boxShadow: '0 4px 14px rgba(30,58,95,0.30)',
+            }}
+            onMouseEnter={e => { if (!loading && !success) e.currentTarget.style.backgroundColor = colors.primaryHover; }}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = colors.primary}
           >
-            {loading ? 'CREATING ACCOUNT...' : 'Create Account'}
+            {loading && <Loader2 size={17} className="animate-spin" />}
+            {loading ? 'Creating Account…' : 'Create Account'}
           </button>
-
-          {/* Divider */}
-          <div className="relative flex items-center py-2">
-            <div className="flex-grow border-t border-slate-200"></div>
-            <span className="mx-4 text-slate-400 text-[10px] font-bold uppercase">or</span>
-            <div className="flex-grow border-t border-slate-200"></div>
-          </div>
-
-          {/* Google Button */}
-          <button
-            type="button"
-            onClick={handleGoogleRegister}
-            className="w-full flex items-center justify-center gap-3 py-3.5 border border-slate-200 rounded-2xl font-semibold text-slate-700 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
-          >
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
-            Register with Google
-          </button>
-
         </form>
 
+        {/* Divider */}
+        <div className="flex items-center gap-4 my-6">
+          <div className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
+          <span
+            className="text-[11px] font-semibold uppercase tracking-widest"
+            style={{ color: colors.textSecondary }}
+          >
+            or
+          </span>
+          <div className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
+        </div>
+
+        {/* Google Button */}
         <button
-          onClick={onSwitch}
-          className="mt-8 w-full flex items-center justify-center gap-2 text-sm text-slate-500 font-medium hover:text-indigo-600 transition-all"
+          onClick={() => navigate('/auth/callback')}
+          disabled={loading || success}
+          className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60"
+          style={{
+            backgroundColor: colors.surface,
+            border: `1.5px solid ${colors.border}`,
+            color: colors.textPrimary,
+          }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = colors.background}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = colors.surface}
         >
-          <ArrowLeft size={16} />
+          {!loading && (
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google"
+              className="w-5 h-5"
+            />
+          )}
+          Continue with Google
+        </button>
+
+        {/* Back to Login */}
+        <button
+          onClick={() => navigate('/login')}
+          disabled={loading || success}
+          className="mt-7 w-full flex items-center justify-center gap-2 text-sm font-medium transition-colors disabled:opacity-50"
+          style={{ color: colors.textSecondary }}
+          onMouseEnter={e => e.currentTarget.style.color = colors.primary}
+          onMouseLeave={e => e.currentTarget.style.color = colors.textSecondary}
+        >
+          <ArrowLeft size={15} />
           Back to Login
         </button>
       </div>
