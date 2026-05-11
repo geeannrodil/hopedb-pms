@@ -1,220 +1,174 @@
 import React, { useState } from 'react';
+import { ArrowLeft, CheckCircle2, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-  LayoutDashboard
-} from 'lucide-react';
 
-function LoginPage() {
-  const navigate = useNavigate();
+// ─── Color tokens ─────────────────────────────────────────────────────────────
+const colors = {
+  primary:       '#1E3A5F',
+  primaryHover:  '#27496D',
+  secondary:     '#4F6D8A',
+  accent:        '#5BC0BE',
+  background:    '#F8FAFC',
+  surface:       '#FFFFFF',
+  textPrimary:   '#1F2937',
+  textSecondary: '#6B7280',
+  border:        '#E5E7EB',
+  success:       '#10B981',
+  error:         '#EF4444',
+};
 
-  // M4's Backend State Logic
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [showPassword, setShowPassword] = useState(false);
+function RegisterPage() {
+  const [form, setForm] = useState({ firstName: '', lastName: '', username: '', email: '', password: '' });
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [focused, setFocused] = useState(null);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: '' });
-    }
+    if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: '' });
   };
 
   const validate = () => {
     const newErrors = {};
-    if (!form.email) {
-      newErrors.email = 'Email is required';
-    } else if (!form.email.includes('@')) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    if (form.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
+    if (!form.firstName) newErrors.firstName = 'First name is required';
+    if (!form.lastName) newErrors.lastName = 'Last name is required';
+    if (!form.username) newErrors.username = 'Username is required';
+    if (!form.email) newErrors.email = 'Email is required';
+    else if (!form.email.includes('@')) newErrors.email = 'Invalid email';
+    if (form.password.length < 6) newErrors.password = 'Min 6 characters';
     return newErrors;
   };
 
-  // M4's Supabase Authentication
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
-    
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
     
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
+      options: { data: { firstName: form.firstName, lastName: form.lastName, username: form.username } },
     });
     
     if (error) {
-      setErrors({ email: error.message });
+      setErrors({ form: error.message });
       setLoading(false);
     } else {
       setSuccess(true);
-      setTimeout(() => navigate('/products'), 1000);
+      setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleRegister = async () => {
     setLoading(true);
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
   };
 
+  const inputStyle = (name) => ({
+    width: '100%',
+    padding: '12px 16px',
+    borderRadius: '10px',
+    backgroundColor: colors.background,
+    border: `1.5px solid ${errors[name] ? '#FCA5A5' : (focused === name ? colors.accent : colors.border)}`,
+    color: colors.textPrimary,
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
+    boxShadow: focused === name && !errors[name] ? `0 0 0 3px rgba(91,192,190,0.15)` : (errors[name] ? '0 0 0 3px rgba(239,68,68,0.1)' : 'none'),
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+  });
+
   return (
-    <div className="min-h-screen bg-[#FDFCFB] flex items-center justify-center px-4 py-10 font-sans text-gray-800">
-      
-      {/* Main Card */}
-      <div className="w-full max-w-md bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-3xl p-8 sm:p-10 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ backgroundColor: colors.background }}>
+      <div className="w-full max-w-lg" style={{ backgroundColor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: '20px', padding: '40px', boxShadow: '0 8px 40px rgba(30,58,95,0.10)' }}>
         
-        {/* Soft gold glow effect */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-[#D4AF37]/10 blur-3xl rounded-full pointer-events-none"></div>
-
-        {/* Header */}
-        <div className="text-center mb-10 relative z-10">
-          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-yellow-50/50 border border-yellow-100 flex items-center justify-center shadow-sm">
-            <LayoutDashboard className="w-8 h-8 text-[#D4AF37]" />
+        <div className="text-center mb-9">
+          <div className="w-14 h-14 mx-auto mb-5 rounded-2xl flex items-center justify-center" style={{ backgroundColor: colors.primary, boxShadow: '0 4px 16px rgba(30,58,95,0.25)' }}>
+            <span className="text-white text-xl font-extrabold tracking-tight">P</span>
           </div>
-
-          <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 tracking-tight">
-            Welcome to HopePMS
-          </h1>
-          <p className="text-sm text-gray-500 mt-3 max-w-[260px] mx-auto leading-relaxed">
-            Sign in to manage your inventory and streamline operations.
-          </p>
+          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: colors.textPrimary }}>Create an Account</h1>
+          <p className="text-sm mt-2.5" style={{ color: colors.textSecondary }}>Join HopePMS to organize, track, and scale your product management workflow.</p>
         </div>
 
-        {/* Success Alert */}
         {success && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-3 text-sm animate-in fade-in zoom-in duration-300">
-            <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
-            <span className="font-medium">Authentication successful! Redirecting...</span>
+          <div className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl" style={{ backgroundColor: '#ECFDF5', border: `1px solid #A7F3D0`, color: colors.success }}>
+            <CheckCircle2 size={17} />
+            <span>Account created! Please check your email or wait for admin activation.</span>
+          </div>
+        )}
+        {errors.form && (
+          <div className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl" style={{ backgroundColor: '#FEF2F2', border: `1px solid #FECACA`, color: colors.error }}>
+            <AlertCircle size={17} />
+            <span>{errors.form}</span>
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
-          
-          {/* Email Input */}
-          <div>
-            <label className="block text-[11px] font-bold text-gray-500 mb-2 ml-1 uppercase tracking-widest">
-              Institutional Email
-            </label>
-            <div className="relative">
-              <Mail className={`absolute left-4 top-3.5 w-5 h-5 ${errors.email ? 'text-red-400' : 'text-gray-400'}`} />
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="jcesperanza@neu.edu.ph"
-                disabled={loading || success}
-                className={`w-full pl-12 pr-4 py-3.5 bg-gray-50/50 border ${errors.email ? 'border-red-300 ring-4 ring-red-50' : 'border-gray-200'} rounded-2xl outline-none focus:bg-white focus:border-[#D4AF37] focus:ring-4 focus:ring-yellow-50 transition-all text-sm`}
-              />
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          <div className="flex flex-col sm:flex-row gap-3.5">
+            <div className="w-full">
+              <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="First Name" disabled={loading || success} style={inputStyle('firstName')} onFocus={() => setFocused('firstName')} onBlur={() => setFocused(null)} />
+              {errors.firstName && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.firstName}</p>}
             </div>
-            {errors.email && (
-              <p className="mt-2 ml-1 text-red-500 text-[10px] font-bold flex items-center gap-1">
-                <AlertCircle size={12} /> {errors.email}
-              </p>
-            )}
+            <div className="w-full">
+              <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Last Name" disabled={loading || success} style={inputStyle('lastName')} onFocus={() => setFocused('lastName')} onBlur={() => setFocused(null)} />
+              {errors.lastName && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.lastName}</p>}
+            </div>
           </div>
 
-          {/* Password Input */}
           <div>
-            <div className="flex items-center justify-between mb-2 ml-1">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-                Password
-              </label>
-              <button type="button" className="text-[11px] font-bold text-[#D4AF37] hover:text-[#C5A028] transition-colors">
-                Forgot?
-              </button>
-            </div>
-            <div className="relative">
-              <Lock className={`absolute left-4 top-3.5 w-5 h-5 ${errors.password ? 'text-red-400' : 'text-gray-400'}`} />
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                disabled={loading || success}
-                className={`w-full pl-12 pr-12 py-3.5 bg-gray-50/50 border ${errors.password ? 'border-red-300 ring-4 ring-red-50' : 'border-gray-200'} rounded-2xl outline-none focus:bg-white focus:border-[#D4AF37] focus:ring-4 focus:ring-yellow-50 transition-all text-sm`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="mt-2 ml-1 text-red-500 text-[10px] font-bold flex items-center gap-1">
-                <AlertCircle size={12} /> {errors.password}
-              </p>
-            )}
+            <input type="text" name="username" value={form.username} onChange={handleChange} placeholder="Workspace Username" disabled={loading || success} style={inputStyle('username')} onFocus={() => setFocused('username')} onBlur={() => setFocused(null)} />
+            {errors.username && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.username}</p>}
           </div>
 
-          {/* Sign In Button */}
-          <button
-            type="submit"
-            disabled={loading || success}
-            className="mt-2 w-full flex items-center justify-center gap-2 py-3.5 bg-[#D4AF37] hover:bg-[#C5A028] text-white rounded-2xl font-semibold transition-all shadow-[0_4px_14px_0_rgba(212,175,55,0.39)] active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100"
-          >
-            {loading && <Loader2 size={18} className="animate-spin" />}
-            {loading ? 'AUTHENTICATING...' : 'SIGN IN'}
+          <div>
+            <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="Institutional Email" disabled={loading || success} style={inputStyle('email')} onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} />
+            {errors.email && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.email}</p>}
+          </div>
+
+          <div className="relative">
+            <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} placeholder="Password" disabled={loading || success} style={{...inputStyle('password'), paddingRight: '45px'}} onFocus={() => setFocused('password')} onBlur={() => setFocused(null)} />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[18px] text-gray-400 hover:text-gray-600">
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+            {errors.password && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.password}</p>}
+          </div>
+
+          <button type="submit" disabled={loading || success} className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.primary, boxShadow: '0 4px 14px rgba(30,58,95,0.30)' }}>
+            {loading && <Loader2 size={17} className="animate-spin" />}
+            {loading ? 'Creating Account…' : 'Create Account'}
           </button>
         </form>
 
-        {/* Divider */}
-        <div className="relative flex items-center py-6">
-          <div className="flex-grow border-t border-gray-100"></div>
-          <span className="mx-4 text-gray-400 text-[10px] font-bold uppercase tracking-widest">or</span>
-          <div className="flex-grow border-t border-gray-100"></div>
+        <div className="flex items-center gap-4 my-6">
+          <div className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
+          <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: colors.textSecondary }}>or</span>
+          <div className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
         </div>
 
-        {/* Google OAuth Button */}
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={loading || success}
-          className="w-full flex items-center justify-center gap-3 py-3.5 border border-gray-200 rounded-2xl font-medium text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100"
-        >
+        <button onClick={handleGoogleRegister} disabled={loading || success} className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.surface, border: `1.5px solid ${colors.border}`, color: colors.textPrimary }}>
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
           Continue with Google
         </button>
 
-        {/* Footer */}
-        <p className="text-center mt-8 text-sm text-gray-500">
-          Don&apos;t have an account?{' '}
-          <button
-            onClick={() => navigate('/register')}
-            disabled={loading || success}
-            className="text-[#D4AF37] hover:text-[#C5A028] font-semibold transition-colors"
-          >
-            Create account
-          </button>
-        </p>
-
+        <button onClick={() => navigate('/login')} disabled={loading || success} className="mt-7 w-full flex items-center justify-center gap-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ color: colors.textSecondary }}>
+          <ArrowLeft size={15} /> Back to Login
+        </button>
       </div>
     </div>
   );
 }
 
-export default LoginPage;
+export default RegisterPage;
