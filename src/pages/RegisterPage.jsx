@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 // ─── Color tokens ─────────────────────────────────────────────────────────────
 const colors = {
@@ -14,22 +15,65 @@ const colors = {
   textSecondary: '#6B7280',
   border:        '#E5E7EB',
   success:       '#10B981',
+  error:         '#EF4444',
 };
 
 function RegisterPage() {
+  const [form, setForm] = useState({ firstName: '', lastName: '', username: '', email: '', password: '' });
+  const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [focused, setFocused] = useState(null);
   const navigate = useNavigate();
 
-  const handleAuthSimulation = (e) => {
-    if (e) e.preventDefault();
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: '' });
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!form.firstName) newErrors.firstName = 'First name is required';
+    if (!form.lastName) newErrors.lastName = 'Last name is required';
+    if (!form.username) newErrors.username = 'Username is required';
+    if (!form.email) newErrors.email = 'Email is required';
+    else if (!form.email.includes('@')) newErrors.email = 'Invalid email';
+    if (form.password.length < 6) newErrors.password = 'Min 6 characters';
+    return newErrors;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    
     setLoading(true);
-    setTimeout(() => {
+    const { error } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: { data: { firstName: form.firstName, lastName: form.lastName, username: form.username } },
+    });
+    
+    if (error) {
+      setErrors({ form: error.message });
       setLoading(false);
+    } else {
       setSuccess(true);
-      setTimeout(() => navigate('/products'), 1000);
-    }, 1500);
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleRegister = async () => {
+    setLoading(true);
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
   };
 
   const inputStyle = (name) => ({
@@ -37,188 +81,90 @@ function RegisterPage() {
     padding: '12px 16px',
     borderRadius: '10px',
     backgroundColor: colors.background,
-    border: `1.5px solid ${focused === name ? colors.accent : colors.border}`,
+    border: `1.5px solid ${errors[name] ? '#FCA5A5' : (focused === name ? colors.accent : colors.border)}`,
     color: colors.textPrimary,
     fontSize: '14px',
     outline: 'none',
     transition: 'border-color 0.15s, box-shadow 0.15s',
-    boxShadow: focused === name ? `0 0 0 3px rgba(91,192,190,0.15)` : 'none',
+    boxShadow: focused === name && !errors[name] ? `0 0 0 3px rgba(91,192,190,0.15)` : (errors[name] ? '0 0 0 3px rgba(239,68,68,0.1)' : 'none'),
     fontFamily: 'inherit',
     boxSizing: 'border-box',
   });
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 py-10"
-      style={{ backgroundColor: colors.background }}
-    >
-      {/* Card */}
-      <div
-        className="w-full max-w-lg"
-        style={{
-          backgroundColor: colors.surface,
-          border: `1px solid ${colors.border}`,
-          borderRadius: '20px',
-          padding: '40px',
-          boxShadow: '0 8px 40px rgba(30,58,95,0.10)',
-        }}
-      >
-        {/* Header */}
+    <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ backgroundColor: colors.background }}>
+      <div className="w-full max-w-lg" style={{ backgroundColor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: '20px', padding: '40px', boxShadow: '0 8px 40px rgba(30,58,95,0.10)' }}>
+        
         <div className="text-center mb-9">
-          <div
-            className="w-14 h-14 mx-auto mb-5 rounded-2xl flex items-center justify-center"
-            style={{
-              backgroundColor: colors.primary,
-              boxShadow: '0 4px 16px rgba(30,58,95,0.25)',
-            }}
-          >
+          <div className="w-14 h-14 mx-auto mb-5 rounded-2xl flex items-center justify-center" style={{ backgroundColor: colors.primary, boxShadow: '0 4px 16px rgba(30,58,95,0.25)' }}>
             <span className="text-white text-xl font-extrabold tracking-tight">P</span>
           </div>
-
-          <h1
-            className="text-2xl font-extrabold tracking-tight"
-            style={{ color: colors.textPrimary }}
-          >
-            Create an Account
-          </h1>
-          <p className="text-sm mt-2.5" style={{ color: colors.textSecondary }}>
-            Join HopePMS to organize, track, and scale your product management workflow.
-          </p>
+          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: colors.textPrimary }}>Create an Account</h1>
+          <p className="text-sm mt-2.5" style={{ color: colors.textSecondary }}>Join HopePMS to organize, track, and scale your product management workflow.</p>
         </div>
 
-        {/* Success Alert */}
         {success && (
-          <div
-            className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl"
-            style={{
-              backgroundColor: '#ECFDF5',
-              border: `1px solid #A7F3D0`,
-              color: colors.success,
-            }}
-          >
+          <div className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl" style={{ backgroundColor: '#ECFDF5', border: `1px solid #A7F3D0`, color: colors.success }}>
             <CheckCircle2 size={17} />
-            <span>Account created successfully! Preparing your workspace…</span>
+            <span>Account created! Please check your email or wait for admin activation.</span>
+          </div>
+        )}
+        {errors.form && (
+          <div className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl" style={{ backgroundColor: '#FEF2F2', border: `1px solid #FECACA`, color: colors.error }}>
+            <AlertCircle size={17} />
+            <span>{errors.form}</span>
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleAuthSimulation} className="flex flex-col gap-3.5">
-
-          {/* Name row */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
           <div className="flex flex-col sm:flex-row gap-3.5">
-            <input
-              type="text"
-              placeholder="First Name"
-              required
-              disabled={loading || success}
-              style={inputStyle('first')}
-              onFocus={() => setFocused('first')}
-              onBlur={() => setFocused(null)}
-            />
-            <input
-              type="text"
-              placeholder="Last Name"
-              required
-              disabled={loading || success}
-              style={inputStyle('last')}
-              onFocus={() => setFocused('last')}
-              onBlur={() => setFocused(null)}
-            />
+            <div className="w-full">
+              <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="First Name" disabled={loading || success} style={inputStyle('firstName')} onFocus={() => setFocused('firstName')} onBlur={() => setFocused(null)} />
+              {errors.firstName && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.firstName}</p>}
+            </div>
+            <div className="w-full">
+              <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Last Name" disabled={loading || success} style={inputStyle('lastName')} onFocus={() => setFocused('lastName')} onBlur={() => setFocused(null)} />
+              {errors.lastName && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.lastName}</p>}
+            </div>
           </div>
 
-          <input
-            type="text"
-            placeholder="Workspace Username"
-            required
-            disabled={loading || success}
-            style={inputStyle('username')}
-            onFocus={() => setFocused('username')}
-            onBlur={() => setFocused(null)}
-          />
+          <div>
+            <input type="text" name="username" value={form.username} onChange={handleChange} placeholder="Workspace Username" disabled={loading || success} style={inputStyle('username')} onFocus={() => setFocused('username')} onBlur={() => setFocused(null)} />
+            {errors.username && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.username}</p>}
+          </div>
 
-          <input
-            type="email"
-            placeholder="Work Email address"
-            required
-            disabled={loading || success}
-            style={inputStyle('email')}
-            onFocus={() => setFocused('email')}
-            onBlur={() => setFocused(null)}
-          />
+          <div>
+            <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="Institutional Email" disabled={loading || success} style={inputStyle('email')} onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} />
+            {errors.email && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.email}</p>}
+          </div>
 
-          <input
-            type="password"
-            placeholder="Password"
-            required
-            disabled={loading || success}
-            style={inputStyle('password')}
-            onFocus={() => setFocused('password')}
-            onBlur={() => setFocused(null)}
-          />
+          <div className="relative">
+            <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} placeholder="Password" disabled={loading || success} style={{...inputStyle('password'), paddingRight: '45px'}} onFocus={() => setFocused('password')} onBlur={() => setFocused(null)} />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[18px] text-gray-400 hover:text-gray-600">
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+            {errors.password && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.password}</p>}
+          </div>
 
-          {/* Register Button */}
-          <button
-            type="submit"
-            disabled={loading || success}
-            className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-60"
-            style={{
-              backgroundColor: colors.primary,
-              boxShadow: '0 4px 14px rgba(30,58,95,0.30)',
-            }}
-            onMouseEnter={e => { if (!loading && !success) e.currentTarget.style.backgroundColor = colors.primaryHover; }}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = colors.primary}
-          >
+          <button type="submit" disabled={loading || success} className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.primary, boxShadow: '0 4px 14px rgba(30,58,95,0.30)' }}>
             {loading && <Loader2 size={17} className="animate-spin" />}
             {loading ? 'Creating Account…' : 'Create Account'}
           </button>
         </form>
 
-        {/* Divider */}
         <div className="flex items-center gap-4 my-6">
           <div className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
-          <span
-            className="text-[11px] font-semibold uppercase tracking-widest"
-            style={{ color: colors.textSecondary }}
-          >
-            or
-          </span>
+          <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: colors.textSecondary }}>or</span>
           <div className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
         </div>
 
-        {/* Google Button */}
-        <button
-          onClick={() => navigate('/auth/callback')}
-          disabled={loading || success}
-          className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60"
-          style={{
-            backgroundColor: colors.surface,
-            border: `1.5px solid ${colors.border}`,
-            color: colors.textPrimary,
-          }}
-          onMouseEnter={e => e.currentTarget.style.backgroundColor = colors.background}
-          onMouseLeave={e => e.currentTarget.style.backgroundColor = colors.surface}
-        >
-          {!loading && (
-            <img
-              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-              alt="Google"
-              className="w-5 h-5"
-            />
-          )}
+        <button onClick={handleGoogleRegister} disabled={loading || success} className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.surface, border: `1.5px solid ${colors.border}`, color: colors.textPrimary }}>
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
           Continue with Google
         </button>
 
-        {/* Back to Login */}
-        <button
-          onClick={() => navigate('/login')}
-          disabled={loading || success}
-          className="mt-7 w-full flex items-center justify-center gap-2 text-sm font-medium transition-colors disabled:opacity-50"
-          style={{ color: colors.textSecondary }}
-          onMouseEnter={e => e.currentTarget.style.color = colors.primary}
-          onMouseLeave={e => e.currentTarget.style.color = colors.textSecondary}
-        >
-          <ArrowLeft size={15} />
-          Back to Login
+        <button onClick={() => navigate('/login')} disabled={loading || success} className="mt-7 w-full flex items-center justify-center gap-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ color: colors.textSecondary }}>
+          <ArrowLeft size={15} /> Back to Login
         </button>
       </div>
     </div>
