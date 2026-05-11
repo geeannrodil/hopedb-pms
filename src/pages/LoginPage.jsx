@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
 import {
   Mail,
   Lock,
@@ -24,7 +25,6 @@ function LoginPage({ onSwitch }) {
       ...form,
       [e.target.name]: e.target.value,
     });
-    // Clear error when user starts typing
     if (errors[e.target.name]) {
       setErrors({
         ...errors,
@@ -46,27 +46,40 @@ function LoginPage({ onSwitch }) {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
-
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
-
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    });
+    if (error) {
+      setErrors({ email: error.message });
       setLoading(false);
+    } else {
       setSuccess(true);
-    }, 1500);
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-200 flex items-center justify-center px-4 py-10 font-sans">
       <div className="w-full max-w-md bg-white/70 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl p-8 sm:p-10">
-        
+
         {/* Header */}
         <div className="text-center mb-8 px-2">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
@@ -80,7 +93,7 @@ function LoginPage({ onSwitch }) {
 
         {/* Success Alert */}
         {success && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-3 text-sm animate-in fade-in zoom-in">
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-3 text-sm">
             <CheckCircle2 size={20} />
             <span>Authentication successful! Redirecting...</span>
           </div>
@@ -88,6 +101,8 @@ function LoginPage({ onSwitch }) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
+
+          {/* Email */}
           <div>
             <label className="block text-[11px] font-bold text-slate-600 mb-2 ml-1 uppercase tracking-widest">
               Institutional Email
@@ -110,6 +125,7 @@ function LoginPage({ onSwitch }) {
             )}
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-[11px] font-bold text-slate-600 mb-2 ml-1 uppercase tracking-widest">
               Password
@@ -139,6 +155,7 @@ function LoginPage({ onSwitch }) {
             )}
           </div>
 
+          {/* Sign In Button */}
           <button
             type="submit"
             disabled={loading}
@@ -149,19 +166,23 @@ function LoginPage({ onSwitch }) {
             {loading ? 'AUTHENTICATING...' : 'SIGN IN'}
           </button>
 
+          {/* Divider */}
           <div className="relative flex items-center py-2">
             <div className="flex-grow border-t border-slate-200"></div>
             <span className="mx-4 text-slate-400 text-[10px] font-bold uppercase">or</span>
             <div className="flex-grow border-t border-slate-200"></div>
           </div>
 
+          {/* Google Button */}
           <button
             type="button"
+            onClick={handleGoogleLogin}
             className="w-full flex items-center justify-center gap-3 py-3.5 border border-slate-200 rounded-2xl font-semibold text-slate-700 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
           >
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
             Sign in with Google
           </button>
+
         </form>
 
         <p className="text-center mt-10 text-xs text-slate-500 font-medium">
