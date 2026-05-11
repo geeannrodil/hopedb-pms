@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { ArrowLeft, CheckCircle2, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 // ─── Color tokens ─────────────────────────────────────────────────────────────
 const colors = {
   primary:       '#1E3A5F',
-  primaryHover:  '#27496D',
   secondary:     '#4F6D8A',
   accent:        '#5BC0BE',
   background:    '#F8FAFC',
@@ -18,15 +17,18 @@ const colors = {
   error:         '#EF4444',
 };
 
-function RegisterPage() {
-  const [form, setForm] = useState({ firstName: '', lastName: '', username: '', email: '', password: '' });
+export default function LoginPage() {
+  const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [focused, setFocused] = useState(null);
+  
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const authError = searchParams.get('error'); // Catch errors from AuthCallbackPage
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -35,12 +37,9 @@ function RegisterPage() {
 
   const validate = () => {
     const newErrors = {};
-    if (!form.firstName) newErrors.firstName = 'First name is required';
-    if (!form.lastName) newErrors.lastName = 'Last name is required';
-    if (!form.username) newErrors.username = 'Username is required';
     if (!form.email) newErrors.email = 'Email is required';
-    else if (!form.email.includes('@')) newErrors.email = 'Invalid email';
-    if (form.password.length < 6) newErrors.password = 'Min 6 characters';
+    else if (!form.email.includes('@')) newErrors.email = 'Please enter a valid email';
+    if (form.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     return newErrors;
   };
 
@@ -53,10 +52,9 @@ function RegisterPage() {
     }
     
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.password,
-      options: { data: { firstName: form.firstName, lastName: form.lastName, username: form.username } },
     });
     
     if (error) {
@@ -64,11 +62,11 @@ function RegisterPage() {
       setLoading(false);
     } else {
       setSuccess(true);
-      setLoading(false);
+      setTimeout(() => navigate('/auth/callback'), 500); // Route to M4's Login Guard
     }
   };
 
-  const handleGoogleRegister = async () => {
+  const handleGoogleLogin = async () => {
     setLoading(true);
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -93,20 +91,28 @@ function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ backgroundColor: colors.background }}>
-      <div className="w-full max-w-lg" style={{ backgroundColor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: '20px', padding: '40px', boxShadow: '0 8px 40px rgba(30,58,95,0.10)' }}>
+      <div className="w-full max-w-md" style={{ backgroundColor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: '20px', padding: '40px', boxShadow: '0 8px 40px rgba(30,58,95,0.10)' }}>
         
+        {/* Header */}
         <div className="text-center mb-9">
           <div className="w-14 h-14 mx-auto mb-5 rounded-2xl flex items-center justify-center" style={{ backgroundColor: colors.primary, boxShadow: '0 4px 16px rgba(30,58,95,0.25)' }}>
             <span className="text-white text-xl font-extrabold tracking-tight">P</span>
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: colors.textPrimary }}>Create an Account</h1>
-          <p className="text-sm mt-2.5" style={{ color: colors.textSecondary }}>Join HopePMS to organize, track, and scale your product management workflow.</p>
+          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: colors.textPrimary }}>HopePMS Login</h1>
+          <p className="text-sm mt-2.5" style={{ color: colors.textSecondary }}>Sign in to manage your inventory and workspace.</p>
         </div>
 
-        {success && (
-          <div className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl" style={{ backgroundColor: '#ECFDF5', border: `1px solid #A7F3D0`, color: colors.success }}>
-            <CheckCircle2 size={17} />
-            <span>Account created! Please check your email or wait for admin activation.</span>
+        {/* Alerts */}
+        {authError === 'not_found' && (
+          <div className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl" style={{ backgroundColor: '#FEF2F2', border: `1px solid #FECACA`, color: colors.error }}>
+            <AlertCircle size={17} />
+            <span>Account not found. Please register first.</span>
+          </div>
+        )}
+        {authError === 'inactive' && (
+          <div className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl" style={{ backgroundColor: '#FFFBEB', border: `1px solid #FDE68A`, color: '#D97706' }}>
+            <AlertCircle size={17} />
+            <span>Your account is pending admin approval.</span>
           </div>
         )}
         {errors.form && (
@@ -116,39 +122,30 @@ function RegisterPage() {
           </div>
         )}
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-          <div className="flex flex-col sm:flex-row gap-3.5">
-            <div className="w-full">
-              <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="First Name" disabled={loading || success} style={inputStyle('firstName')} onFocus={() => setFocused('firstName')} onBlur={() => setFocused(null)} />
-              {errors.firstName && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.firstName}</p>}
-            </div>
-            <div className="w-full">
-              <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Last Name" disabled={loading || success} style={inputStyle('lastName')} onFocus={() => setFocused('lastName')} onBlur={() => setFocused(null)} />
-              {errors.lastName && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.lastName}</p>}
-            </div>
-          </div>
-
-          <div>
-            <input type="text" name="username" value={form.username} onChange={handleChange} placeholder="Workspace Username" disabled={loading || success} style={inputStyle('username')} onFocus={() => setFocused('username')} onBlur={() => setFocused(null)} />
-            {errors.username && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.username}</p>}
-          </div>
-
           <div>
             <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="Institutional Email" disabled={loading || success} style={inputStyle('email')} onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} />
-            {errors.email && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.email}</p>}
+            {errors.email && <p className="mt-1.5 ml-1 text-[11px] font-semibold text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.email}</p>}
           </div>
 
-          <div className="relative">
-            <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} placeholder="Password" disabled={loading || success} style={{...inputStyle('password'), paddingRight: '45px'}} onFocus={() => setFocused('password')} onBlur={() => setFocused(null)} />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[18px] text-gray-400 hover:text-gray-600">
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-            {errors.password && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.password}</p>}
+          <div>
+            <div className="relative">
+              <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} placeholder="Password" disabled={loading || success} style={{ ...inputStyle('password'), paddingRight: '45px' }} onFocus={() => setFocused('password')} onBlur={() => setFocused(null)} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[18px] text-gray-400 hover:text-gray-600">
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {errors.password && <p className="mt-1.5 ml-1 text-[11px] font-semibold text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.password}</p>}
+          </div>
+
+          <div className="flex justify-end mt-1">
+            <button type="button" className="text-sm font-medium transition-colors" style={{ color: colors.secondary }}>Forgot password?</button>
           </div>
 
           <button type="submit" disabled={loading || success} className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.primary, boxShadow: '0 4px 14px rgba(30,58,95,0.30)' }}>
             {loading && <Loader2 size={17} className="animate-spin" />}
-            {loading ? 'Creating Account…' : 'Create Account'}
+            {loading ? 'Signing In…' : 'Sign In'}
           </button>
         </form>
 
@@ -158,17 +155,16 @@ function RegisterPage() {
           <div className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
         </div>
 
-        <button onClick={handleGoogleRegister} disabled={loading || success} className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.surface, border: `1.5px solid ${colors.border}`, color: colors.textPrimary }}>
+        <button onClick={handleGoogleLogin} disabled={loading || success} className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.surface, border: `1.5px solid ${colors.border}`, color: colors.textPrimary }}>
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
           Continue with Google
         </button>
 
-        <button onClick={() => navigate('/login')} disabled={loading || success} className="mt-7 w-full flex items-center justify-center gap-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ color: colors.textSecondary }}>
-          <ArrowLeft size={15} /> Back to Login
-        </button>
+        <p className="text-center mt-7 text-sm" style={{ color: colors.textSecondary }}>
+          Don&apos;t have an account?{' '}
+          <button onClick={() => navigate('/register')} disabled={loading || success} className="font-semibold transition-colors" style={{ color: colors.primary }}>Create account</button>
+        </p>
       </div>
     </div>
   );
 }
-
-export default RegisterPage;
