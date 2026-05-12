@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [focused, setFocused] = useState(null);
 
   const navigate = useNavigate();
@@ -56,6 +57,7 @@ export default function LoginPage() {
       setErrors({ form: error.message });
       setLoading(false);
     } else {
+      setSuccess(true);
       setTimeout(() => navigate('/auth/callback'), 500);
     }
   };
@@ -119,13 +121,13 @@ export default function LoginPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
           <div>
-            <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="Institutional Email" disabled={loading} style={inputStyle('email')} onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} />
+            <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="Institutional Email" disabled={loading || success} style={inputStyle('email')} onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} />
             {errors.email && <p className="mt-1.5 ml-1 text-[11px] font-semibold text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.email}</p>}
           </div>
 
           <div>
             <div className="relative">
-              <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} placeholder="Password" disabled={loading} style={{ ...inputStyle('password'), paddingRight: '45px' }} onFocus={() => setFocused('password')} onBlur={() => setFocused(null)} />
+              <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} placeholder="Password" disabled={loading || success} style={{ ...inputStyle('password'), paddingRight: '45px' }} onFocus={() => setFocused('password')} onBlur={() => setFocused(null)} />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[18px] text-gray-400 hover:text-gray-600">
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -133,7 +135,11 @@ export default function LoginPage() {
             {errors.password && <p className="mt-1.5 ml-1 text-[11px] font-semibold text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.password}</p>}
           </div>
 
-          <button type="submit" disabled={loading} className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.primary, boxShadow: '0 4px 14px rgba(30,58,95,0.30)' }}>
+          <div className="flex justify-end mt-1">
+            <button type="button" className="text-sm font-medium transition-colors" style={{ color: colors.secondary }}>Forgot password?</button>
+          </div>
+
+          <button type="submit" disabled={loading || success} className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.primary, boxShadow: '0 4px 14px rgba(30,58,95,0.30)' }}>
             {loading && <Loader2 size={17} className="animate-spin" />}
             {loading ? 'Signing In…' : 'Sign In'}
           </button>
@@ -145,14 +151,14 @@ export default function LoginPage() {
           <div className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
         </div>
 
-        <button onClick={handleGoogleLogin} disabled={loading} className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.surface, border: `1.5px solid ${colors.border}`, color: colors.textPrimary }}>
+        <button onClick={handleGoogleLogin} disabled={loading || success} className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.surface, border: `1.5px solid ${colors.border}`, color: colors.textPrimary }}>
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
           Sign in with Google
         </button>
 
         <p className="text-center mt-7 text-sm" style={{ color: colors.textSecondary }}>
           Don&apos;t have an account?{' '}
-          <button onClick={() => navigate('/register')} disabled={loading} className="font-semibold transition-colors" style={{ color: colors.primary }}>Create account</button>
+          <button onClick={() => navigate('/register')} disabled={loading || success} className="font-semibold transition-colors" style={{ color: colors.primary }}>Create account</button>
         </p>
       </div>
     </div>

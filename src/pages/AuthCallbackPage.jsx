@@ -15,6 +15,7 @@ export default function AuthCallbackPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // M4's Backend Logic: Auth State Listener & Login Guard
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === "SIGNED_IN" && session) {
