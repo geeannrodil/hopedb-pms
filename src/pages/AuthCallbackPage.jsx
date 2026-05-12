@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
+// ─── Color tokens ─────────────────────────────────────────────────────────────
 const colors = {
   primary:       '#1E3A5F',
   background:    '#F8FAFC',
@@ -16,7 +17,8 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "SIGNED_IN") {
+        if (event === "SIGNED_IN" && session) {
+          // Check if user is ACTIVE in the database
           const { data, error } = await supabase
             .from("user")
             .select("record_status")
@@ -40,7 +42,7 @@ export default function AuthCallbackPage() {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   return (
     <div
@@ -48,6 +50,7 @@ export default function AuthCallbackPage() {
       style={{ backgroundColor: colors.background }}
     >
       <div className="flex flex-col items-center max-w-sm text-center">
+        {/* Pulsing Logo */}
         <div
           className="w-16 h-16 mb-8 rounded-2xl flex items-center justify-center animate-pulse"
           style={{
@@ -58,18 +61,19 @@ export default function AuthCallbackPage() {
           <span className="text-white text-2xl font-extrabold tracking-tight">P</span>
         </div>
 
+        {/* Loading text and spinner */}
         <div className="flex items-center gap-3 mb-3">
           <Loader2 size={22} className="animate-spin" style={{ color: colors.primary }} />
           <h2
             className="text-xl font-extrabold tracking-tight"
             style={{ color: colors.textPrimary }}
           >
-            Authenticating
+            Verifying your account
           </h2>
         </div>
 
         <p className="text-sm leading-relaxed" style={{ color: colors.textSecondary }}>
-          Establishing a secure connection. Please wait while we verify your account.
+          Establishing a secure connection with HopePMS. Please wait a moment while we check your access rights.
         </p>
       </div>
     </div>

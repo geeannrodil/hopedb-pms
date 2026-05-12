@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 const colors = {
   primary:       '#1E3A5F',
-  primaryHover:  '#27496D',
   secondary:     '#4F6D8A',
   accent:        '#5BC0BE',
   background:    '#F8FAFC',
@@ -17,13 +16,16 @@ const colors = {
   error:         '#EF4444',
 };
 
-function LoginPage() {
+export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(null);
+
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const authError = searchParams.get('error');
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -33,8 +35,8 @@ function LoginPage() {
   const validate = () => {
     const newErrors = {};
     if (!form.email) newErrors.email = 'Email is required';
-    else if (!form.email.includes('@')) newErrors.email = 'Invalid email';
-    if (!form.password) newErrors.password = 'Password is required';
+    else if (!form.email.includes('@')) newErrors.email = 'Please enter a valid email';
+    if (form.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     return newErrors;
   };
 
@@ -54,7 +56,7 @@ function LoginPage() {
       setErrors({ form: error.message });
       setLoading(false);
     } else {
-      navigate('/products');
+      setTimeout(() => navigate('/auth/callback'), 500);
     }
   };
 
@@ -82,17 +84,31 @@ function LoginPage() {
   });
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: colors.background }}>
+    <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ backgroundColor: colors.background }}>
       <div className="w-full max-w-md" style={{ backgroundColor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: '20px', padding: '40px', boxShadow: '0 8px 40px rgba(30,58,95,0.10)' }}>
 
+        {/* Header */}
         <div className="text-center mb-9">
           <div className="w-14 h-14 mx-auto mb-5 rounded-2xl flex items-center justify-center" style={{ backgroundColor: colors.primary, boxShadow: '0 4px 16px rgba(30,58,95,0.25)' }}>
             <span className="text-white text-xl font-extrabold tracking-tight">P</span>
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: colors.textPrimary }}>Welcome Back</h1>
-          <p className="text-sm mt-2.5" style={{ color: colors.textSecondary }}>Sign in to your HopePMS account.</p>
+          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: colors.textPrimary }}>HopePMS Login</h1>
+          <p className="text-sm mt-2.5" style={{ color: colors.textSecondary }}>Sign in to manage your inventory and workspace.</p>
         </div>
 
+        {/* Alerts */}
+        {authError === 'not_found' && (
+          <div className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl" style={{ backgroundColor: '#FEF2F2', border: `1px solid #FECACA`, color: colors.error }}>
+            <AlertCircle size={17} />
+            <span>Account not found. Please register first.</span>
+          </div>
+        )}
+        {authError === 'inactive' && (
+          <div className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl" style={{ backgroundColor: '#FFFBEB', border: `1px solid #FDE68A`, color: '#D97706' }}>
+            <AlertCircle size={17} />
+            <span>Your account is pending admin approval.</span>
+          </div>
+        )}
         {errors.form && (
           <div className="mb-6 p-4 flex items-center gap-3 text-sm rounded-xl" style={{ backgroundColor: '#FEF2F2', border: `1px solid #FECACA`, color: colors.error }}>
             <AlertCircle size={17} />
@@ -100,18 +116,21 @@ function LoginPage() {
           </div>
         )}
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
           <div>
             <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="Institutional Email" disabled={loading} style={inputStyle('email')} onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} />
-            {errors.email && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.email}</p>}
+            {errors.email && <p className="mt-1.5 ml-1 text-[11px] font-semibold text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.email}</p>}
           </div>
 
-          <div className="relative">
-            <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} placeholder="Password" disabled={loading} style={{...inputStyle('password'), paddingRight: '45px'}} onFocus={() => setFocused('password')} onBlur={() => setFocused(null)} />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[18px] text-gray-400 hover:text-gray-600">
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-            {errors.password && <p className="mt-1 ml-1 text-[10px] font-semibold text-red-500">{errors.password}</p>}
+          <div>
+            <div className="relative">
+              <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} placeholder="Password" disabled={loading} style={{ ...inputStyle('password'), paddingRight: '45px' }} onFocus={() => setFocused('password')} onBlur={() => setFocused(null)} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[18px] text-gray-400 hover:text-gray-600">
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {errors.password && <p className="mt-1.5 ml-1 text-[11px] font-semibold text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.password}</p>}
           </div>
 
           <button type="submit" disabled={loading} className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.primary, boxShadow: '0 4px 14px rgba(30,58,95,0.30)' }}>
@@ -131,12 +150,11 @@ function LoginPage() {
           Sign in with Google
         </button>
 
-        <button onClick={() => navigate('/register')} disabled={loading} className="mt-7 w-full flex items-center justify-center gap-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ color: colors.textSecondary }}>
-          Don't have an account? Register
-        </button>
+        <p className="text-center mt-7 text-sm" style={{ color: colors.textSecondary }}>
+          Don&apos;t have an account?{' '}
+          <button onClick={() => navigate('/register')} disabled={loading} className="font-semibold transition-colors" style={{ color: colors.primary }}>Create account</button>
+        </p>
       </div>
     </div>
   );
 }
-
-export default LoginPage;
