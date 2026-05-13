@@ -3,7 +3,6 @@ import { ArrowLeft, CheckCircle2, Loader2, AlertCircle, Eye, EyeOff } from 'luci
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-// ─── Color tokens ─────────────────────────────────────────────────────────────
 const colors = {
   primary:       '#1E3A5F',
   secondary:     '#4F6D8A',
@@ -21,14 +20,13 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
-  
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [focused, setFocused] = useState(null);
-  
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const authError = searchParams.get('error'); // Catch errors from AuthCallbackPage
+  const authError = searchParams.get('error');
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -50,19 +48,17 @@ export default function LoginPage() {
       setErrors(validationErrors);
       return;
     }
-    
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.password,
     });
-    
     if (error) {
       setErrors({ form: error.message });
       setLoading(false);
     } else {
       setSuccess(true);
-      setTimeout(() => navigate('/auth/callback'), 500); // Route to M4's Login Guard
+      setTimeout(() => navigate('/auth/callback'), 500);
     }
   };
 
@@ -92,7 +88,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ backgroundColor: colors.background }}>
       <div className="w-full max-w-md" style={{ backgroundColor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: '20px', padding: '40px', boxShadow: '0 8px 40px rgba(30,58,95,0.10)' }}>
-        
+
         {/* Header */}
         <div className="text-center mb-9">
           <div className="w-14 h-14 mx-auto mb-5 rounded-2xl flex items-center justify-center" style={{ backgroundColor: colors.primary, boxShadow: '0 4px 16px rgba(30,58,95,0.25)' }}>
@@ -157,7 +153,7 @@ export default function LoginPage() {
 
         <button onClick={handleGoogleLogin} disabled={loading || success} className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60" style={{ backgroundColor: colors.surface, border: `1.5px solid ${colors.border}`, color: colors.textPrimary }}>
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
-          Continue with Google
+          Sign in with Google
         </button>
 
         <p className="text-center mt-7 text-sm" style={{ color: colors.textSecondary }}>
