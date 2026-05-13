@@ -14,33 +14,66 @@ const colors = {
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
 
+  // 🔧 MAIN FIX: Proper async function + initial session check
+  const checkUserStatus = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('userid, record_status, user_type')
+        .eq('userid', userId)
+        .maybeSingle();
+
+      if (error || !data) {
+        console.error('[AuthCallback] User not found:', error?.message);
+        await supabase.auth.signOut();
+        navigate('/login?error=not_found');
+        return false;
+      }
+
+      if (data.record_status === 'ACTIVE') {
+        // SUPERADMIN goes to admin dashboard
+        if (data.user_type === 'SUPERADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/products');
+        }
+        return true;
+      } else {
+        await supabase.auth.signOut();
+        navigate('/login?error=inactive');
+        return false;
+      }
+    } catch (err) {
+      console.error('[AuthCallback] Error:', err);
+      navigate('/login?error=auth_error');
+      return false;
+    }
+  };
+
   useEffect(() => {
-    // M4's Backend Logic: Auth State Listener & Login Guard
+    // 1️⃣ Check current session FIRST (OAuth callback)
+    const checkCurrentSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        await checkUserStatus(session.user.id);
+      } else {
+        navigate('/login');
+      }
+    };
+
+    // 2️⃣ Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "SIGNED_IN" && session) {
-          // Check if user is ACTIVE in the database
-          const { data, error } = await supabase
-            .from("user")
-            .select("record_status")
-            .eq("userId", session.user.id)
-            .single();
-
-          if (error) {
-            await supabase.auth.signOut();
-            navigate("/login?error=not_found");
-            return;
-          }
-
-          if (data?.record_status === "ACTIVE") {
-            navigate("/products");
-          } else {
-            await supabase.auth.signOut();
-            navigate("/login?error=inactive");
-          }
+        if (event === 'SIGNED_IN' && session?.user?.id) {
+          await checkUserStatus(session.user.id);
+        } else if (event === 'SIGNED_OUT') {
+          navigate('/login');
         }
       }
     );
+
+    // 3️⃣ Run initial check
+    checkCurrentSession();
 
     return () => subscription.unsubscribe();
   }, [navigate]);
@@ -51,7 +84,6 @@ export default function AuthCallbackPage() {
       style={{ backgroundColor: colors.background }}
     >
       <div className="flex flex-col items-center max-w-sm text-center">
-        {/* Pulsing Logo */}
         <div
           className="w-16 h-16 mb-8 rounded-2xl flex items-center justify-center animate-pulse"
           style={{
@@ -62,7 +94,6 @@ export default function AuthCallbackPage() {
           <span className="text-white text-2xl font-extrabold tracking-tight">P</span>
         </div>
 
-        {/* Loading text and spinner */}
         <div className="flex items-center gap-3 mb-3">
           <Loader2 size={22} className="animate-spin" style={{ color: colors.primary }} />
           <h2
@@ -74,7 +105,7 @@ export default function AuthCallbackPage() {
         </div>
 
         <p className="text-sm leading-relaxed" style={{ color: colors.textSecondary }}>
-          Establishing a secure connection with HopePMS. Please wait a moment while we check your access rights.
+          Establishing a secure connection with HopePMS. Please wait while we check your access rights.
         </p>
       </div>
     </div>
