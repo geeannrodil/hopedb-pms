@@ -1,11 +1,21 @@
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function ProtectedRoute({ children }) {
-  // Dummy logic, palitan mo nalang to M4 okay?
-  const isAuthenticated = true; 
+  const { currentUser, loading } = useAuth();
 
-  if (!isAuthenticated) {
+  // Wait for Supabase session to resolve before deciding
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
+
   return children;
 }
